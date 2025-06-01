@@ -1,6 +1,6 @@
 import unittest
 
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 class TestHTMLNode(unittest.TestCase):
     def test_htmlnode_no_props(self):
@@ -118,3 +118,100 @@ class TestLeafNode(unittest.TestCase):
         with self.assertRaises(ValueError):
             node = LeafNode("p", None)
             node.to_html()
+
+    
+class TestParentNode(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None  # Show full diffs in assertion failures
+        
+    def test_to_html_with_children(self):
+        """
+        test for to html with children node
+        """
+        child_node = LeafNode("span", "child")
+        parent_node = ParentNode("div", [child_node])
+        self.assertEqual(parent_node.to_html(), "<div><span>child</span></div>")
+
+    def test_to_html_with_grandchildren(self):
+        """
+        test for to html with grandchild node
+        """
+        grandchild_node = LeafNode("b", "grandchild")
+        child_node = ParentNode("span", [grandchild_node])
+        parent_node = ParentNode("div", [child_node])
+        self.assertEqual(
+            parent_node.to_html(),
+            "<div><span><b>grandchild</b></span></div>",
+        )
+    
+    def test_to_html_multiple_grandchildren(self):
+        """
+        test multiple grand children(LeafNode)
+        """
+        grandchild_node1 = LeafNode("b", "grandchild")
+        grandchild_node2 = LeafNode("i", "grandchild2")
+        grandchild_node = ParentNode("span", [grandchild_node1, grandchild_node2])
+        child_node = ParentNode("p", [grandchild_node])
+        parent_node = ParentNode("div", [child_node])
+        
+        self.assertEqual(
+            parent_node.to_html(),
+            "<div><p><span><b>grandchild</b><i>grandchild2</i></span></p></div>"
+        )
+    def test_to_html_multiple_children(self):
+        """
+        test for to html with multiple children
+        """
+        child_node1 = LeafNode("b", "I want to be a software engineer")
+        child_node2 = LeafNode("i", "Or maybe a cloud engineer would be okay also")
+        child_node3 = LeafNode("a", "This is the link if you want to be a backend engineer", {"href": "https://boot.dev/", "target": "_blank",})
+        parent_node = ParentNode("p", [child_node1, child_node2, child_node3])
+        self.assertEqual(
+            parent_node.to_html(),
+            '<p><b>I want to be a software engineer</b><i>Or maybe a cloud engineer would be okay also</i><a href="https://boot.dev/" target="_blank">This is the link if you want to be a backend engineer</a></p>'
+        )
+            
+    def test_to_html_no_tag(self):
+        """
+        test for to html a parent with no tag 
+        """
+        with self.assertRaises(ValueError):
+            child_node = LeafNode("h2", "My name is ben")
+            parent_node = ParentNode(None, [child_node])
+            parent_node.to_html()        
+        
+    def test_to_html_none_children(self):
+        """
+        test for to html none children
+        """
+        with self.assertRaises(ValueError):
+            parent_node = ParentNode("div", None)
+            parent_node.to_html()
+            
+    def test_to_html_empty_children(self):
+        """
+        test for to html for empty children1
+        """
+        with self.assertRaises(ValueError):
+            parent_node = ParentNode("div", [])
+            parent_node.to_html()
+            
+    def test_complex_nested_structure(self):
+        """
+        Test a complex nested structure with multiple levels
+        """
+        structure = ParentNode("div", [
+            LeafNode("h1", "Title"),
+            ParentNode("section", [
+                LeafNode("p", "Paragraph"),
+                ParentNode("div", [
+                    LeafNode("span", "Text"),
+                    LeafNode("a", "Link", {"href": "#"})
+                ])
+            ])
+        ])
+        
+        self.assertEqual(
+            structure.to_html(),
+            '<div><h1>Title</h1><section><p>Paragraph</p><div><span>Text</span><a href="#">Link</a></div></section></div>'
+            )
